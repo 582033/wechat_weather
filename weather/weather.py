@@ -6,7 +6,7 @@ import time
 import json
 import sys
 import smtplib
-import city_code
+from city_code import city_code
 from email.mime.text import MIMEText
 from email.Header import Header
 
