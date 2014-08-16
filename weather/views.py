@@ -1,0 +1,58 @@
+# -*- coding: utf-8 -*-
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.template import RequestContext, Template
+from django.utils.encoding import smart_str, smart_unicode
+import hashlib
+from xml.etree import ElementTree as etree
+from weather import weather
+
+@csrf_exempt
+def weixin(request):
+    if request.method=='GET':
+        response=HttpResponse(checkSignature(request))
+        return response
+    else:
+       xmlstr = smart_str(request.body)
+       xml = etree.fromstring(xmlstr)
+
+       ToUserName = xml.find('ToUserName').text
+       FromUserName = xml.find('FromUserName').text
+       CreateTime = xml.find('CreateTime').text
+       MsgType = xml.find('MsgType').text
+       Content = xml.find('Content').text
+       MsgId = xml.find('MsgId').text
+       reply_xml = """<xml>
+       <ToUserName><![CDATA[%s]]></ToUserName>
+       <FromUserName><![CDATA[%s]]></FromUserName>
+       <CreateTime>%s</CreateTime>
+       <MsgType><![CDATA[text]]></MsgType>
+       <Content><![CDATA[%s]]></Content>
+       </xml>"""%(FromUserName,ToUserName,CreateTime,reply(Content))
+       return HttpResponse(reply_xml)
+
+def reply(msg):
+    #msg = 'beijing'
+    wt = weather()
+    if wt.city_code.has_key(msg):
+        result = wt.get_weather(msg)
+    else:
+        result = "不支持的地区\n请输入要查询的地区拼音,例如'北京'请输入'beijing'"
+    return result
+
+def checkSignature(request):
+    signature=request.GET.get('signature',None)
+    timestamp=request.GET.get('timestamp',None)
+    nonce=request.GET.get('nonce',None)
+    echostr=request.GET.get('echostr',None)
+    #这里的token我放在setting，可以根据自己需求修改
+    token="yjiang"
+
+    tmplist=[token,timestamp,nonce]
+    tmplist.sort()
+    tmpstr="%s%s%s"%tuple(tmplist)
+    tmpstr=hashlib.sha1(tmpstr).hexdigest()
+    if tmpstr==signature:
+        return echostr
+    else:
+        return "<a href='http://yjiang.tk'>http://yjiang.tk</a>"
