@@ -9,6 +9,7 @@ from weather import weather
 import re
 from keyword_dict import joke
 import pinyin
+from turing_robot import turing
 
 @csrf_exempt
 def weixin(request):
@@ -37,15 +38,20 @@ def weixin(request):
 def reply(msg):
     #msg = 'beijing'
     wt = weather()
-    msg = pinyin.get(msg)
-    if wt.city_code.has_key(msg):
-        result = wt.get_weather(msg)
+    pymsg = pinyin.get(msg)
+    if wt.city_code.has_key(pymsg):
+        result = wt.get_weather(pymsg)
     else:
         result = "你在说什么?我只支持天气查询哦.\n\n试着输入要查询的地区吧,比如'北京'"
+        joke_num = False
         for key in joke:
-            reg = re.search(key, msg)
+            reg = re.search(key, pymsg)
             if reg:
                 result = joke[reg.group(0)]
+                joke_num = True
+        if not joke_num:
+            robot = turing()
+            result = robot.reply(msg)
     return result
 
 def checkSignature(request):
