@@ -8,6 +8,7 @@ from xml.etree import ElementTree as etree
 from weather import weather
 import re
 from keyword_dict import joke
+import pinyin
 
 @csrf_exempt
 def weixin(request):
@@ -36,10 +37,11 @@ def weixin(request):
 def reply(msg):
     #msg = 'beijing'
     wt = weather()
+    msg = pinyin.get(msg)
     if wt.city_code.has_key(msg):
         result = wt.get_weather(msg)
     else:
-        result = "你在说什么?我只支持天气查询哦.\n\n请输入要查询的地区拼音,例如'北京'请输入'beijing'"
+        result = "你在说什么?我只支持天气查询哦.\n\n试着输入要查询的地区吧,比如'北京'"
         for key in joke:
             reg = re.search(key, msg)
             if reg:
