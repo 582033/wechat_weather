@@ -6,6 +6,8 @@ from django.utils.encoding import smart_str, smart_unicode
 import hashlib
 from xml.etree import ElementTree as etree
 from weather import weather
+import re
+from keyword_dict import joke
 
 @csrf_exempt
 def weixin(request):
@@ -13,23 +15,23 @@ def weixin(request):
         response=HttpResponse(checkSignature(request))
         return response
     else:
-       xmlstr = smart_str(request.body)
-       xml = etree.fromstring(xmlstr)
+        xmlstr = smart_str(request.body)
+        xml = etree.fromstring(xmlstr)
 
-       ToUserName = xml.find('ToUserName').text
-       FromUserName = xml.find('FromUserName').text
-       CreateTime = xml.find('CreateTime').text
-       MsgType = xml.find('MsgType').text
-       Content = xml.find('Content').text
-       MsgId = xml.find('MsgId').text
-       reply_xml = """<xml>
-       <ToUserName><![CDATA[%s]]></ToUserName>
-       <FromUserName><![CDATA[%s]]></FromUserName>
-       <CreateTime>%s</CreateTime>
-       <MsgType><![CDATA[text]]></MsgType>
-       <Content><![CDATA[%s]]></Content>
-       </xml>"""%(FromUserName,ToUserName,CreateTime,reply(Content))
-       return HttpResponse(reply_xml)
+        ToUserName = xml.find('ToUserName').text
+        FromUserName = xml.find('FromUserName').text
+        CreateTime = xml.find('CreateTime').text
+        MsgType = xml.find('MsgType').text
+        Content = xml.find('Content').text
+        MsgId = xml.find('MsgId').text
+        reply_xml = """<xml>
+        <ToUserName><![CDATA[%s]]></ToUserName>
+        <FromUserName><![CDATA[%s]]></FromUserName>
+        <CreateTime>%s</CreateTime>
+        <MsgType><![CDATA[text]]></MsgType>
+        <Content><![CDATA[%s]]></Content>
+        </xml>"""%(FromUserName,ToUserName,CreateTime,reply(Content))
+        return HttpResponse(reply_xml)
 
 def reply(msg):
     #msg = 'beijing'
@@ -37,7 +39,11 @@ def reply(msg):
     if wt.city_code.has_key(msg):
         result = wt.get_weather(msg)
     else:
-        result = "不支持的地区\n请输入要查询的地区拼音,例如'北京'请输入'beijing'"
+        result = "你在说什么?我只支持天气查询哦.\n\n请输入要查询的地区拼音,例如'北京'请输入'beijing'"
+        for key in joke:
+            reg = re.search(key, msg)
+            if reg:
+                result = joke[reg.group(0)]
     return result
 
 def checkSignature(request):
